@@ -6,7 +6,7 @@ environmental conditions and publishes data to Home Assistant via MQTT.
 
 Features:
 - Temperature and humidity monitoring (DHT11 sensor)
-- Light level measurement (BH1750 sensor) 
+- Light level measurement (BH1750 sensor)
 - Soil moisture monitoring (capacitive sensor)
 - Local display (SSD1306 OLED)
 - WiFi connectivity with auto-reconnect
@@ -75,12 +75,12 @@ connection_status = {"wifi": False, "mqtt": False, "last_successful_publish": 0}
 def initialize_sensors():
     """
     Initialize all sensors and update their status.
-    
+
     Sets up I2C communication for BH1750 light sensor and OLED display,
     initializes DHT11 temperature/humidity sensor, and configures ADC for
     soil moisture readings. Updates global sensor_status dictionary to track
     which sensors are working properly.
-    
+
     Returns:
         None
     """
@@ -151,11 +151,11 @@ def initialize_sensors():
 def connect_wifi():
     """
     Establish WiFi connection with automatic retry mechanism.
-    
+
     Attempts to connect to WiFi network using global ssid and password.
     Retries up to 10 times with 2-second delays between attempts.
     Updates connection_status dictionary with WiFi status.
-    
+
     Returns:
         bool: True if connection successful, False otherwise
     """
@@ -188,11 +188,11 @@ def connect_wifi():
 def connect_mqtt():
     """
     Establish MQTT connection to broker with authentication.
-    
+
     Creates MQTTClient instance with global broker credentials and connects
     to the MQTT broker. Includes connection testing by publishing a test message.
     Handles cleanup of existing connections and error management.
-    
+
     Returns:
         bool: True if connection successful, False otherwise
     """
@@ -210,7 +210,7 @@ def connect_mqtt():
             port=mqtt_port,
             user=mqtt_user,
             password=mqtt_password,
-            keepalive=120,  
+            keepalive=120,
         )
 
         mqtt_client.connect()
@@ -233,10 +233,10 @@ def connect_mqtt():
 def is_mqtt_connected():
     """
     Check if MQTT client is currently connected.
-    
+
     Performs a lightweight check of MQTT connection status by verifying
     both client existence and connection status flag.
-    
+
     Returns:
         bool: True if MQTT client exists and is connected, False otherwise
     """
@@ -246,12 +246,12 @@ def is_mqtt_connected():
 def publish_discovery_config():
     """
     Publish Home Assistant discovery configurations for all sensors.
-    
+
     Publishes MQTT discovery configurations for temperature, humidity, light,
     soil moisture, and device status sensors. Uses proper Home Assistant
     device classes and measurement units to enable automatic entity creation
     and statistics tracking.
-    
+
     Returns:
         None
     """
@@ -268,6 +268,7 @@ def publish_discovery_config():
             "device_class": "humidity",
             "unit": "%",
             "state_class": "measurement",
+            "force_update": True,
         },
         {
             "id": "temperature",
@@ -275,6 +276,7 @@ def publish_discovery_config():
             "device_class": "temperature",
             "unit": "°C",
             "state_class": "measurement",
+            "force_update": True,
         },
         {
             "id": "lux",
@@ -282,6 +284,7 @@ def publish_discovery_config():
             "device_class": "illuminance",
             "unit": "lx",
             "state_class": "measurement",
+            "force_update": True,
         },
         {
             "id": "soil_moisture",
@@ -289,11 +292,13 @@ def publish_discovery_config():
             "device_class": "moisture",
             "unit": "%",
             "state_class": "measurement",
+            "force_update": True,
         },
         {
             "id": "status",
             "name": "Device Status",
-            "icon": "mdi:check-circle",  #
+            "icon": "mdi:check-circle",
+            "force_update": True,
         },
     ]
 
@@ -312,6 +317,7 @@ def publish_discovery_config():
                 "model": DEVICE_MODEL,
                 "sw_version": DEVICE_VERSION,
             },
+            "force_update": sensor.get("force_update", False),
         }
 
         # Add device_class for standard sensors
@@ -344,25 +350,23 @@ def publish_discovery_config():
             print(f"Failed to publish discovery for {sensor['id']}: {e}")
 
 
-def safe_publish(topic, value):
+def safe_publish(topic, value, retain=False):
     """
     Safely publish a value to an MQTT topic with error handling.
-    
-    Checks MQTT connection status before attempting to publish and handles
-    any exceptions that may occur during the publish operation.
-    
+
     Args:
         topic (str): MQTT topic to publish to
         value: Value to publish (will be converted to string)
-    
+        retain (bool): MQTT retain flag, default False
+
     Returns:
         bool: True if publish successful, False otherwise
     """
     if not is_mqtt_connected():
         return False
     try:
-        mqtt_client.publish(topic, str(value))
-        print(f"Published {value} to {topic}")
+        mqtt_client.publish(topic, str(value), retain=retain)
+        print(f"Published {value} to {topic} with retain={retain}")
         return True
     except Exception as e:
         print(f"Publish failed to {topic}: {e}")
@@ -373,17 +377,17 @@ def safe_publish(topic, value):
 def publish_sensor_data(temp, hum, lux, moisture):
     """
     Publish all sensor data to individual MQTT topics.
-    
+
     Publishes temperature, humidity, light level, and soil moisture data
     to separate MQTT topics using the safe_publish function. Counts
     successful publications for monitoring purposes.
-    
+
     Args:
         temp (float): Temperature reading in Celsius
-        hum (float): Humidity reading in percentage  
+        hum (float): Humidity reading in percentage
         lux (float): Light level reading in lux
         moisture (float): Soil moisture reading in percentage
-    
+
     Returns:
         int: Number of successful sensor data publications
     """
@@ -403,7 +407,7 @@ def publish_sensor_data(temp, hum, lux, moisture):
         if value is not None:
             # Use consistent topic structure with discovery
             topic = f"homeassistant/sensor/pico_w_01/{sensor_type}/state"
-            if safe_publish(topic, value):
+            if safe_publish(topic, value, retain=True):
                 published_count += 1
 
     return published_count
@@ -412,12 +416,12 @@ def publish_sensor_data(temp, hum, lux, moisture):
 def publish_device_status():
     """
     Publish comprehensive device status information.
-    
+
     Evaluates overall device health based on WiFi connectivity, MQTT connection,
     sensor functionality, and recent successful data publications. Publishes
     status strings like "online", "offline", "degraded", or "warning" to help
     monitor device health remotely.
-     
+
     Returns:
         bool: True if status published successfully, False otherwise
     """
@@ -460,17 +464,17 @@ def publish_device_status():
 def update_oled(temp, hum, lux, moisture):
     """
     Update the OLED display with current sensor readings.
-    
+
     Displays formatted sensor data on the SSD1306 OLED screen, showing
     light level, temperature, humidity, and soil moisture. Handles cases
     where sensor values are None by displaying "--" placeholders.
-    
+
     Args:
         temp (float): Temperature reading in Celsius
         hum (float): Humidity reading in percentage
         lux (float): Light level reading in lux
         moisture (float): Soil moisture reading in percentage
-    
+
     Returns:
         None
     """
@@ -504,16 +508,16 @@ def update_oled(temp, hum, lux, moisture):
 def get_soil_moisture_percent(raw_value, dry=SOIL_MOISTURE_DRY, wet=SOIL_MOISTURE_WET):
     """
     Convert raw ADC soil moisture reading to percentage.
-    
+
     Converts raw 16-bit ADC values from capacitive soil moisture sensor
     to percentage values using calibrated dry and wet reference points.
     Higher ADC values indicate drier soil, lower values indicate wetter soil.
-    
+
     Args:
         raw_value (int): Raw ADC reading from soil moisture sensor
         dry (int): ADC value for completely dry soil (default: 41000)
         wet (int): ADC value for completely wet soil (default: 18000)
-    
+
     Returns:
         int: Soil moisture percentage (0-100)
     """
@@ -525,15 +529,15 @@ def get_soil_moisture_percent(raw_value, dry=SOIL_MOISTURE_DRY, wet=SOIL_MOISTUR
 def safe_sensor_read(sensor_name, read_function):
     """
     Generic function for safe sensor reading with failure tracking.
-    
+
     Executes a sensor read function with exception handling and tracks
     consecutive failures. Resets failure count on successful reads.
     Helps identify problematic sensors for maintenance purposes.
-    
+
     Args:
         sensor_name (str): Name of the sensor for failure tracking
         read_function (callable): Function to execute for sensor reading
-    
+
     Returns:
         Any: Result of read_function if successful, None if failed
     """
@@ -553,13 +557,13 @@ def safe_sensor_read(sensor_name, read_function):
 def read_sensors_once():
     """
     Read all sensors once and return their values.
-    
-    Performs a single reading from all connected sensors (DHT11, BH1750, 
+
+    Performs a single reading from all connected sensors (DHT11, BH1750,
     soil moisture) using safe_sensor_read for error handling. Converts
     raw soil moisture ADC values to percentage using calibrated reference points.
-    
+
     Returns:
-        tuple: (temperature, humidity, lux, moisture_percent) - any value 
+        tuple: (temperature, humidity, lux, moisture_percent) - any value
                can be None if sensor reading failed
     """
 
@@ -612,11 +616,11 @@ else:
 def force_gc():
     """
     Force garbage collection and print memory statistics.
-    
+
     Manually triggers garbage collection to free up memory and prints
     current memory usage statistics. Issues a warning if available
     memory drops below 10KB threshold.
-    
+
     Returns:
         None
     """
@@ -751,6 +755,4 @@ while True:
 
         last_publish_time = current_time
 
-    time.sleep(
-        0.5
-    ) 
+    time.sleep(0.5)

@@ -6,9 +6,12 @@ Project for 1DT305 IoT Summer Course, Linnaeus University (2025)
 
 **Author**: Nils Olivier (no222jk)
 
+>[!NOTE]
+> Estimated completion time: approximately one day. The actual duration may vary based on your familiarity with electronics and programming, as well as your existing setup (for example, whether you already have an MQTT broker such as Mosquitto configured).
+
 ---
 
-## 1. Introduction: A New Plant Parent’s Journey 🌱
+## Introduction: A New Plant Parent’s Journey 🌱
 
 Becoming a plant parent has been one of the most rewarding (and surprisingly challenging) hobbies I’ve picked up recently. I quickly realized that plants aren’t just about watering them now and then—they each have their own little quirks and needs, like just the right amount of light, moisture, and temperature.
 
@@ -18,7 +21,7 @@ I kept wondering: how can I combine my love for tech with my new plant care jour
 
 ---
 
-## 💡 Why I Built This: From Frustrations to Solutions
+## Why I Built This: From Frustrations to Solutions
 
 Common newbie mistakes I faced:
 
@@ -38,7 +41,7 @@ No more guesswork — just confident plant care.
 
 ---
 
-## The Tech Stack: My Plant Sensor’s Secret Sauce
+## The Tech Stack
 
 ### Hardware Platform
 
@@ -88,9 +91,9 @@ Sensor data (temperature, humidity, light, soil moisture) is packaged into simpl
 
 ---
 
-## How It Works: A Peek Inside My Plant Sensor
+## How It Works
 
-### Initialization Magic
+### Initialization
 
 Every time the sensor boots up, it sets up communication channels:
 
@@ -111,6 +114,8 @@ If the network drops, no worries—the system automatically reconnects so I don�
 Sensor reads happen every 6 seconds. To avoid noisy data, I collect raw readings into lists for one minute and then calculate averages.
 
 For soil moisture, I translate raw analog values into a percentage based on calibrated dry and wet reference points (dry = 41,000 ADC units, wet = 18,000 ADC units). I calibrate these values by testing the sensor in dry and wet soil, then using those points to convert ADC readings into a percentage.
+
+### Code Example
 
 Here's a simplified code example showing how these concepts work in practice:
 
