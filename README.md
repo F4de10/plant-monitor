@@ -40,27 +40,38 @@ No more guesswork — just confident plant care.
 
 ## The Tech Stack: My Plant Sensor’s Secret Sauce
 
-### Core Components
+### Hardware Platform
 
-- **Raspberry Pi Pico WH**: The tiny brain running the show, juggling sensor reads and WiFi communication.
-- **MicroPython**: A lightweight Python variant that’s perfect for quick coding on microcontrollers.
-- **MQTT Protocol**: The message protocol for sending sensor data to my smart home setup through WiFi, smoothly and efficiently.
+- **Raspberry Pi Pico WH**: The tiny brain running the show, juggling sensor reads and WiFi communication. I picked the Pico WH because it strikes a great balance between power, price, and ease of use. It comes with built-in WiFi, so I didn’t have to mess around with extra modules or complicated wiring. Plus, it runs MicroPython, which made coding and tweaking the sensor super approachable—even as a beginner.
 
-### Sensors I Chose (and Why)
+### Sensors
 
-- **DHT11**: Temperature and humidity — straightforward and reliable.
-- **BH1750**: Measures how bright the light is — critical for photosynthesis!
-- **Capacitive Soil Moisture Sensor (V1.2)**: Measures soil moisture without corrosion issues.
+- **DHT11**: Measures temperature and humidity reliably and simply.
+- **BH1750**: Measures ambient light intensity, key for monitoring photosynthesis conditions.
+- **Capacitive Soil Moisture Sensor (V1.2)**: Provides corrosion-resistant soil moisture readings.
 
 >[!NOTE]
 > I used the DHT11 because it was included in the electrokit starter kit (see Shopping List below), but it can easily be replaced with the more accurate variant DHT22 by changing "DHT11" with "DHT22" in the code. Also, a resistive soil moisture sensor might be cheaper but tend to give up after a few weeks from oxidation.
 
-### How I See My Data
+### Software and Communication Protocol
 
-- **SSD1306 OLED Display**: My personal dashboard, right on the device.
-- **Home Assistant**: A smart home system running on a Raspberry Pi 5, showing dashboards, logging data and running automations.
+The project runs on **MicroPython**, a lightweight Python variant ideal for microcontrollers.
 
-### Shopping List (with Links & Prices)
+For wireless communication, I use MQTT over WiFi due to their complementary strengths:
+
+- MQTT is a lightweight, reliable publish-subscribe protocol designed for constrained devices and unstable networks, ensuring smooth data transmission.
+- WiFi offers good range and bandwidth within home environments but consumes more power than alternatives like LoRa or BLE. Since my sensor is mains-powered, WiFi’s power usage is acceptable.
+
+### Data Handling and Transmission
+
+Sensor data (temperature, humidity, light, soil moisture) is packaged into simple JSON messages and published via MQTT every 60 seconds. This interval balances timely updates with network load and power consumption. More frequent transmissions are possible but may impact battery life and network traffic.
+
+### Display and User Interface
+
+- **SSD1306 OLED Display**: Shows real-time sensor readings and status messages, making it easy to check plant health at a glance.
+- **Home Assistant**: Automatically discovers sensors via MQTT, creating entities for each measurement. This allows me to visualize data, set up alerts, and build automations without writing complex code.
+
+### Material Shopping List
 
 | Component            | Image | Price (approx.) | Link      |
 | -------------------- | ------ | --------------- | --------- |
