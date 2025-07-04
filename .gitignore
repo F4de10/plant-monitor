@@ -1,0 +1,30 @@
+# Plant Monitor .gitignore
+
+# Configuration files with credentials
+config.py
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+~$*
+
+# MicroPython specific
+*.mpy
