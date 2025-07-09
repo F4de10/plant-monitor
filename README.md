@@ -382,16 +382,21 @@ This project is just the beginning. Here are some improvements I would consider 
 ---
 
 ## Results and Analysis
-<div style="display: flex; align-items: flex-start; gap: 24px;">
-    <figure style="margin: 0; text-align: center;">
-        <img src="docs/plant_monitor.jpg" alt="Original basil plant" width="220"/>
-        <figcaption>Day 0: Basil plant at the start of monitoring</figcaption>
-    </figure>
-    <figure style="margin: 0; text-align: center;">
-        <img src="docs/basil_after_2_weeks.jpg" alt="Basil plant after 2 weeks" width="220"/>
-        <figcaption>Day 14: Basil plant after 2 weeks — little visible growth due to insufficient light</figcaption>
-    </figure>
-</div>
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="docs/plant_monitor.jpg" alt="Original basil plant" width="300" />
+      <br />
+      <b>Original basil plant</b>
+    </td>
+    <td align="center">
+      <img src="docs/basil_after_2_weeks.jpg" alt="Basil plant after 2 weeks" width="300" />
+      <br />
+      <b>Basil plant after 2 weeks</b>
+    </td>
+  </tr>
+</table>
 
 The basil plant used during this project did not show any visible growth over the 2-week monitoring period. While this timeframe is relatively short for plant development, the collected data provided valuable insights into potential issues and user errors.
 
