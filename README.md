@@ -62,16 +62,16 @@ The project runs on **MicroPython**, a lightweight Python variant ideal for micr
 
 For wireless communication, I use MQTT over WiFi due to their complementary strengths:
 
-- MQTT is a lightweight, reliable publish-subscribe protocol designed for constrained devices and unstable networks, ensuring smooth data transmission.
+- MQTT is a lightweight, reliable publish-subscribe protocol designed for constrained devices and unstable networks, ensuring smooth data transmission. I already had an MQTT broker setup so this would would integrate perfectly. 
 - WiFi offers good range and bandwidth within home environments but consumes more power than alternatives like LoRa or BLE. Since my sensor is mains-powered, WiFi’s power usage is acceptable.
 
 ### Data Handling and Transmission
 
-Sensor data (temperature, humidity, light, soil moisture) is packaged into simple JSON messages and published via MQTT every 60 seconds. This interval balances timely updates with network load and power consumption. More frequent transmissions are possible but may impact battery life and network traffic.
+Sensor data (temperature, humidity, light, soil moisture) is packaged into simple JSON messages and published via MQTT every 60 seconds. This interval should give an adequate frequency of updates while minimizing network traffic and power consumption. 
 
 ### Display and User Interface
 
-- **SSD1306 OLED Display**: Shows real-time sensor readings and status messages, making it easy to check plant health at a glance.
+- **SSD1306 OLED Display**: Shows real-time sensor readings and status messages, making it easy to check plant health and device status at a glance.
 - **Home Assistant**: Automatically discovers sensors via MQTT, creating entities for each measurement. This allows me to visualize data, set up alerts, and build automations without writing complex code.
 
 ### Material Shopping List
@@ -105,21 +105,22 @@ I also built in checks to catch sensor failures early and keep the system runnin
 
 ### Staying Connected
 
-WiFi can be finicky sometimes, so my code tries up to 10 times to connect. Once online, the MQTT client hooks up to my broker with secure credentials.
+WiFi can be finicky sometimes, so the code tries up to 10 times to connect. Once online, the MQTT client tries to hook up to the broker with secure credentials.
 
-If the network drops, no worries—the system automatically reconnects so I don’t have to babysit it.
+If the network drops, the system automatically reconnects. 
 
 ### Gathering and Processing Data
 
-Sensor reads happen every 6 seconds. To avoid noisy data, I collect raw readings into lists for one minute and then calculate averages.
+Sensor reads happen every 6 seconds. To avoid noisy data, it collects raw readings into lists for one minute and then calculate averages.
 
-For soil moisture, I translate raw analog values into a percentage based on calibrated dry and wet reference points (dry = 41,000 ADC units, wet = 18,000 ADC units). I calibrate these values by testing the sensor in dry and wet soil, then using those points to convert ADC readings into a percentage.
+For soil moisture, it translates raw analog values into a percentage based on calibrated dry and wet reference points (For my case: dry = 41,000 ADC units, wet = 18,000 ADC units). I calibrate these values by testing the sensor in dry and wet soil, then using those points to convert ADC readings into a percentage.
 
 ### Code Example
 
 Here's a simplified code example showing how these concepts work in practice:
 
 ```python
+# Import necessary packages
 from machine import Pin, SoftI2C, ADC
 import dht
 from bh1750 import BH1750
@@ -172,7 +173,7 @@ lux_readings = []
 moisture_readings = []
 
 while True:
-    # Read sensors every 6 seconds
+    # Read all sensors
     temp, hum, lux, moisture = read_sensors_once()
     
     # Store readings for averaging
@@ -202,7 +203,8 @@ while True:
         hum_readings.clear()
         lux_readings.clear()
         moisture_readings.clear()
-    
+
+    # Sleep 6 seconds until next measurements
     time.sleep(6)
 ```
 
@@ -255,7 +257,7 @@ Check out the wiring diagram for a detailed visual:
 
 #### Prerequisites
 
-- Raspberry Pi Pico WH with MicroPython firmware installed
+- Raspberry Pi Pico WH
 - MQTT broker running on your network (like Mosquitto)
 - Python IDE (VS Code with PyMakr extension or Thonny)
 
@@ -303,7 +305,7 @@ Check out the wiring diagram for a detailed visual:
 **Common Issues:**
 
 - **Import errors**: Ensure the `lib/` directory is uploaded with all files
-- **WiFi connection fails**: Check SSID and password in `config.py`
+- **WiFi connection fails**: Check SSID and password in `config.py` or router distance
 - **MQTT connection fails**: Verify broker IP and credentials
 - **Sensor readings show `--`**: Check wiring connections and power supply
 
@@ -364,25 +366,47 @@ To make the stored data easy to explore and understand, I deployed:
 
 - **[Grafana integration](https://github.com/hassio-addons/addon-grafana):** Connected directly to VictoriaMetrics, Grafana provides flexible dashboards with customizable time ranges (24 hours, 7 days, etc.).
 
-![Grafana Dashboard Example](docs/grafana_dashboard_example.jpg)
+![Grafana Dashboard Example](docs/grafana_dashboard_example.png)
 
 ---
 
-## What’s Next?
+## What's Next?
 
-This project is just the beginning. Here’s what I would add next:
+This project is just the beginning. Here are some improvements I would consider for future iterations:
 
-- **A 3D-printed enclosure** to protect the hardware and make it look nicer on my plant shelf.
-- **Battery power** so I can place sensors anywhere without worrying about cables.
-- **Extra sensors** like CO₂, soil pH, or nutrients for even deeper insights.
-- **Machine learning** to analyze data trends and predict plant stress or disease before I even see symptoms.
+- **Enclosure**: Design and 3D-print an enclosure to protect the hardware and make it more aesthetically appealing.
+- **Battery Power**: Add rechargeable battery support, enabling placement anywhere without dependence on power outlets.
+- **Expanded Sensor Suite**: Integrate additional sensors like CO₂, soil pH, or nutrient level sensors for a more in-depth understanding of plant health.
+- **Machine Learning Integration**: Implement predictive analytics to analyze data trends and forecast plant stress, disease, or optimal care timing before visible symptoms appear.
 
 ---
+
+## Results and Analysis
+
+![Original basil plant](docs/plant_monitor.jpg) ![Basil plant after 2 weeks](docs/basil_after_2_weeks.jpg)
+
+The basil plant used during this project did not show any visible growth over the 2-week monitoring period. While this timeframe is relatively short for plant development, the collected data provided valuable insights into potential issues and user errors.
+
+### Key Findings
+
+**Watering Issues**: As evident from the Grafana graphs, the plant was watered too early and in excessive amounts. This demonstrates how data-driven monitoring can reveal care mistakes that might not be obvious through visual inspection alone.
+
+**Light Deficiency - The Primary Problem**: The most significant issue identified was insufficient light exposure. Analysis of the Daily Light Integral (DLI) data revealed concerning results:
+
+![Daily Light Integral Graph](docs/dli_graph.png)
+
+- **Maximum DLI recorded**: 1.2 (on the sunniest day)
+- **Ideal DLI for basil** (according to OpenPlantBook): minimum of 13
+- **Actual vs. required**: The plant received less than 10% of the light needed for proper growth
+
+This severe light deficiency was clearly the primary factor preventing healthy growth, as adequate light is fundamental for photosynthesis and plant development.
+
+### Data-Driven Insights
+
+This experiment perfectly illustrates the value of IoT monitoring in plant care. Without the sensor data, I might have attributed the poor growth to other factors or continued with inadequate lighting conditions. The quantified measurements provided clear, actionable insights that visual observation alone could not deliver. Now it's time to find a better location or a grow light to ensure my basil gets the light it needs to thrive!
 
 ## Wrapping Up
 
-Building this Plant Sensor taught me how accessible IoT can be for everyday problems. By combining affordable hardware with open protocols like MQTT, I created a tool tailored to my plants’ needs—and I hope it inspires others to do the same.
-
----
+I hope this project inspires you to explore the intersection of IoT technology and plant care, and demonstrates how data-driven approaches can lead to better outcomes for both plants and their caretakers.
 
 Happy planting and coding! 🌿
